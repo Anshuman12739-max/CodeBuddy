@@ -1,5 +1,8 @@
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/supabaseClient.js';
 import { sendSuccess } from '../utils/responseHandler.js';
+import { devAttempts } from './practiceController.js';
+import { devMessages } from './conversationController.js';
+import { devActivities } from './aiController.js';
 
 export async function getDashboardStats(req, res, next) {
   try {
@@ -68,7 +71,6 @@ export async function getDashboardStats(req, res, next) {
         if (activeDates.has(dateStr)) {
           streakDays++;
         } else if (i === 0) {
-          // If no activity yet today, check yesterday before breaking streak
           continue;
         } else {
           break;
@@ -103,16 +105,61 @@ export async function getDashboardStats(req, res, next) {
         isEmpty: totalAttempts === 0 && questionsAsked === 0 && (activities?.length || 0) === 0
       });
     } else {
-      // Local dev offline empty/initial state
+      // Local dev offline calculated state from real in-memory attempts and activities
+      const attemptsList = Array.from(devAttempts.values()).filter(a => a.user_id === userId);
+      const totalAttempts = attemptsList.length;
+      const problemsCompleted = attemptsList.filter(a => a.completed).length;
+
+      // Count user messages in devMessages
+      let questionsAsked = 0;
+      for (const msgs of devMessages.values()) {
+        questionsAsked += msgs.filter(m => m.role === 'user').length;
+      }
+
+      const langCounts = {};
+      const topicCounts = {};
+      const activeDates = new Set();
+
+      devActivities.forEach(act => {
+        if (act.language) {
+          langCounts[act.language] = (langCounts[act.language] || 0) + 1;
+        }
+        if (act.topic) {
+          topicCounts[act.topic] = (topicCounts[act.topic] || 0) + 1;
+        }
+        if (act.created_at) {
+          activeDates.add(act.created_at.split('T')[0]);
+        }
+      });
+
+      let streakDays = activeDates.size > 0 ? activeDates.size : 1;
+
+      const topLanguages = Object.entries(langCounts)
+        .map(([language, count]) => ({ language, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const recentTopics = Object.entries(topicCounts)
+        .map(([topic, count]) => ({ topic, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const allTopics = [
+        'Variables and data types', 'Operators', 'Conditional statements',
+        'Loops', 'Arrays', 'Strings', 'Functions', 'Recursion',
+        'Searching and sorting', 'Object-oriented programming', 'Basic data structures'
+      ];
+      const studiedTopicNames = new Set(recentTopics.map(t => t.topic));
+      const suggestedNextTopics = allTopics.filter(t => !studiedTopicNames.has(t)).slice(0, 3);
+
       return sendSuccess(res, {
-        totalAttempts: 0,
-        problemsCompleted: 0,
-        questionsAsked: 0,
-        streakDays: 1,
-        topLanguages: [{ language: 'python', count: 1 }],
-        recentTopics: [{ topic: 'Loops', count: 1 }],
-        suggestedNextTopics: ['Variables and data types', 'Conditional statements', 'Functions'],
-        isEmpty: false
+        totalAttempts,
+        problemsCompleted,
+        questionsAsked,
+        streakDays,
+        topLanguages: topLanguages.length > 0 ? topLanguages : [{ language: 'python', count: 1 }],
+        recentTopics: recentTopics.length > 0 ? recentTopics : [{ topic: 'Core Logic', count: 1 }],
+        suggestedNextTopics,
+        isEmpty: totalAttempts === 0 && questionsAsked === 0 && devActivities.length === 0
       });
     }
   } catch (err) {
@@ -135,15 +182,19 @@ export async function getDashboardActivity(req, res, next) {
       if (error) throw error;
       return sendSuccess(res, data || []);
     } else {
-      return sendSuccess(res, [
-        {
-          id: 'act-1',
-          activity_type: 'code_explained',
-          language: 'python',
-          topic: 'Recursion',
-          created_at: new Date().toISOString()
-        }
-      ]);
+      const activities = devActivities.slice(0, 20);
+      if (activities.length === 0) {
+        return sendSuccess(res, [
+          {
+            id: 'act-1',
+            activity_type: 'code_explained',
+            language: 'python',
+            topic: 'Recursion',
+            created_at: new Date().toISOString()
+          }
+        ]);
+      }
+      return sendSuccess(res, activities);
     }
   } catch (err) {
     next(err);

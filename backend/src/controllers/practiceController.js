@@ -2,8 +2,8 @@ import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/su
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 
 // In-memory fallback
-const devProblems = new Map();
-const devAttempts = new Map();
+export const devProblems = new Map();
+export const devAttempts = new Map();
 
 export async function getPracticeProblems(req, res, next) {
   try {
@@ -45,12 +45,12 @@ export async function savePracticeProblem(req, res, next) {
           difficulty: body.difficulty,
           title: body.title,
           description: body.description,
-          input_description: body.inputDescription,
-          output_description: body.outputDescription,
+          input_description: body.inputDescription || body.input_description,
+          output_description: body.outputDescription || body.output_description,
           constraints: body.constraints,
-          sample_input: body.sampleInput,
-          sample_output: body.sampleOutput,
-          concept_practiced: body.conceptPracticed
+          sample_input: body.sampleInput || body.sample_input,
+          sample_output: body.sampleOutput || body.sample_output,
+          concept_practiced: body.conceptPracticed || body.concept_practiced
         })
         .select()
         .single();
@@ -62,7 +62,17 @@ export async function savePracticeProblem(req, res, next) {
       const newProb = {
         id,
         user_id: userId,
-        ...body,
+        language: body.language,
+        topic: body.topic,
+        difficulty: body.difficulty,
+        title: body.title,
+        description: body.description,
+        input_description: body.inputDescription || body.input_description,
+        output_description: body.outputDescription || body.output_description,
+        constraints: body.constraints,
+        sample_input: body.sampleInput || body.sample_input,
+        sample_output: body.sampleOutput || body.sample_output,
+        concept_practiced: body.conceptPracticed || body.concept_practiced,
         created_at: new Date().toISOString()
       };
       devProblems.set(id, newProb);
@@ -220,7 +230,26 @@ export async function getUserAttempts(req, res, next) {
       if (error) throw error;
       return sendSuccess(res, data || []);
     } else {
-      const list = Array.from(devAttempts.values()).filter(a => a.user_id === userId);
+      const list = Array.from(devAttempts.values())
+        .filter(a => a.user_id === userId)
+        .map(a => {
+          const prob = devProblems.get(a.problem_id);
+          return {
+            ...a,
+            practice_problems: prob ? {
+              title: prob.title,
+              language: prob.language,
+              topic: prob.topic,
+              difficulty: prob.difficulty
+            } : {
+              title: 'Practice Challenge',
+              language: 'python',
+              topic: 'Algorithms',
+              difficulty: 'Beginner'
+            }
+          };
+        })
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
       return sendSuccess(res, list);
     }
   } catch (err) {

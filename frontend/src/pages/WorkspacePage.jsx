@@ -289,26 +289,26 @@ export default function WorkspacePage() {
                 <h3 className="text-base font-bold text-white">{problem.title}</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">{problem.description}</p>
 
-                {problem.input_description && (
+                {(problem.input_description || problem.inputDescription) && (
                   <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
                     <span className="text-[11px] font-semibold text-slate-400 uppercase">Input</span>
-                    <p className="text-xs text-slate-200">{problem.input_description}</p>
+                    <p className="text-xs text-slate-200">{problem.input_description || problem.inputDescription}</p>
                   </div>
                 )}
 
-                {problem.output_description && (
+                {(problem.output_description || problem.outputDescription) && (
                   <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
                     <span className="text-[11px] font-semibold text-slate-400 uppercase">Output</span>
-                    <p className="text-xs text-slate-200">{problem.output_description}</p>
+                    <p className="text-xs text-slate-200">{problem.output_description || problem.outputDescription}</p>
                   </div>
                 )}
 
-                {problem.sample_input && (
+                {(problem.sample_input || problem.sampleInput) && (
                   <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
                     <span className="text-[11px] font-semibold text-slate-400 uppercase">Sample Case</span>
-                    <pre className="text-xs font-mono text-indigo-300">{problem.sample_input}</pre>
-                    {problem.sample_output && (
-                      <pre className="text-xs font-mono text-emerald-300 mt-2">{problem.sample_output}</pre>
+                    <pre className="text-xs font-mono text-indigo-300">{problem.sample_input || problem.sampleInput}</pre>
+                    {(problem.sample_output || problem.sampleOutput) && (
+                      <pre className="text-xs font-mono text-emerald-300 mt-2">{problem.sample_output || problem.sampleOutput}</pre>
                     )}
                   </div>
                 )}

@@ -7,7 +7,7 @@ import { authService } from '../services/authService';
 import { SUPPORTED_LANGUAGES } from '../utils/constants';
 
 export default function ProfilePage() {
-  const { user, aiStatus, logout, refreshUser } = useAuth();
+  const { user, aiStatus, logout, updateProfile } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [preferredLanguage, setPreferredLanguage] = useState(user?.preferredLanguage || 'python');
   const [saving, setSaving] = useState(false);
@@ -28,11 +28,10 @@ export default function ProfilePage() {
     setSuccess(false);
 
     try {
-      await authService.updateProfile({
+      await updateProfile({
         displayName,
         preferredLanguage
       });
-      await refreshUser();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

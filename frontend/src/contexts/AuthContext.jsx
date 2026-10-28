@@ -84,6 +84,19 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateProfile = async (updates) => {
+    const res = await authService.updateProfile(updates);
+    if (res.data) {
+      setUser(prev => ({
+        ...prev,
+        displayName: res.data.display_name || updates.displayName || prev?.displayName,
+        preferredLanguage: res.data.preferred_language || updates.preferredLanguage || prev?.preferredLanguage,
+        avatarUrl: res.data.avatar_url !== undefined ? res.data.avatar_url : prev?.avatarUrl
+      }));
+    }
+    return res;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -93,6 +106,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        updateProfile,
         refreshUser: loadUser,
         refreshAIStatus: checkAIHealth
       }}

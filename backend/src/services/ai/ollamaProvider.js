@@ -82,6 +82,8 @@ export class OllamaProvider extends AIProvider {
           options: {
             temperature: options.temperature ?? 0.3,
             top_p: options.top_p ?? 0.9,
+            num_predict: options.maxTokens ?? 600,
+            num_ctx: 2048
           }
         }),
         signal: controller.signal

@@ -1,5 +1,6 @@
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/supabaseClient.js';
+import { devProfile } from './profileController.js';
 
 export async function getCurrentUser(req, res) {
   try {
@@ -13,6 +14,8 @@ export async function getCurrentUser(req, res) {
       const client = getSupabaseClient(user.token);
       const { data } = await client.from('profiles').select('*').eq('id', user.id).single();
       profile = data;
+    } else {
+      profile = devProfile;
     }
 
     return sendSuccess(res, {

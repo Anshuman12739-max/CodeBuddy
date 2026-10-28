@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lightbulb, Lock, Unlock, Eye, Sparkles, AlertCircle, CheckCircle, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { aiService } from '../../services/aiService';
@@ -25,6 +25,12 @@ export default function HintProgression({
   const [solutionModalOpen, setSolutionModalOpen] = useState(false);
   const [error, setError] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+
+  useEffect(() => {
+    setUnlockedLevel(initialLevel || problem?.attempt?.hints_used || 0);
+    setHints(initialHints || {});
+    setSolution(null);
+  }, [problem?.id, initialLevel]);
 
   const fetchNextHint = async (targetLevel) => {
     if (targetLevel > 4) return;

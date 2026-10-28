@@ -3,22 +3,37 @@ import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/supabaseClient.js';
 import { logger } from '../utils/logger.js';
 
+export const devActivities = [];
+
 /**
  * Log activity helper
  */
 async function logActivity(user, activityType, language, topic = null, metadata = {}) {
-  if (!user || !isSupabaseConfigured()) return;
-  try {
-    const client = getSupabaseClient(user.token);
-    await client.from('learning_activity').insert({
+  if (!user) return;
+  if (isSupabaseConfigured()) {
+    try {
+      const client = getSupabaseClient(user.token);
+      await client.from('learning_activity').insert({
+        user_id: user.id,
+        activity_type: activityType,
+        language,
+        topic,
+        metadata
+      });
+    } catch (err) {
+      logger.warn('Failed to log learning activity:', err.message);
+    }
+  } else {
+    devActivities.unshift({
+      id: 'act-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       user_id: user.id,
       activity_type: activityType,
       language,
       topic,
-      metadata
+      metadata,
+      created_at: new Date().toISOString()
     });
-  } catch (err) {
-    logger.warn('Failed to log learning activity:', err.message);
+    if (devActivities.length > 100) devActivities.pop();
   }
 }
 
