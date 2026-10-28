@@ -176,18 +176,25 @@ export async function getFullSolution(req, res, next) {
   }
 }
 
+import { saveDevChatMessage } from './conversationController.js';
+
 export async function chatTutor(req, res, next) {
   try {
     const { message, history, language, conversationId } = req.body;
     const response = await aiService.chat({ message, history, language });
 
-    if (req.user && conversationId && isSupabaseConfigured()) {
-      const client = getSupabaseClient(req.user.token);
-      // Persist user and assistant messages to database
-      await client.from('conversation_messages').insert([
-        { conversation_id: conversationId, role: 'user', content: message },
-        { conversation_id: conversationId, role: 'assistant', content: response.reply }
-      ]);
+    if (conversationId) {
+      if (req.user && isSupabaseConfigured()) {
+        const client = getSupabaseClient(req.user.token);
+        // Persist user and assistant messages to database
+        await client.from('conversation_messages').insert([
+          { conversation_id: conversationId, role: 'user', content: message },
+          { conversation_id: conversationId, role: 'assistant', content: response.reply }
+        ]);
+      } else {
+        saveDevChatMessage(conversationId, 'user', message);
+        saveDevChatMessage(conversationId, 'assistant', response.reply);
+      }
     }
 
     return sendSuccess(res, response, 'Tutor reply received');

@@ -83,12 +83,34 @@ export class GeminiProvider extends AIProvider {
         }
       });
 
-      // Format conversation turns for Gemini
-      // Gemini expects role: 'user' | 'model'
-      const formattedContents = conversationHistory.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
+      // Format conversation turns for Gemini (alternating 'user' and 'model')
+      const formattedContents = [];
+      for (const m of conversationHistory) {
+        const geminiRole = m.role === 'assistant' ? 'model' : 'user';
+        if (formattedContents.length === 0 && geminiRole !== 'user') {
+          // Gemini requires the conversation to begin with a user turn
+          continue;
+        }
+
+        const last = formattedContents[formattedContents.length - 1];
+        if (last && last.role === geminiRole) {
+          // Merge consecutive same-role turns into single message
+          last.parts[0].text += '\n\n' + m.content;
+        } else {
+          formattedContents.push({
+            role: geminiRole,
+            parts: [{ text: m.content }]
+          });
+        }
+      }
+
+      // If empty (e.g. only assistant greeting was present), ensure at least one user turn
+      if (formattedContents.length === 0) {
+        formattedContents.push({
+          role: 'user',
+          parts: [{ text: 'Hello' }]
+        });
+      }
 
       // Wrap with timeout
       const generatePromise = model.generateContent({

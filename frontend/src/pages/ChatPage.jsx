@@ -132,6 +132,7 @@ export default function ChatPage() {
 
     // Append user message to UI immediately
     const userMsg = { role: 'user', content: text };
+    const priorHistory = messages.filter(m => m.role === 'user' || m.role === 'assistant');
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setSending(true);
@@ -139,16 +140,17 @@ export default function ChatPage() {
     try {
       const res = await aiService.chat(
         text,
-        updatedMessages,
+        priorHistory,
         language,
-        activeConversationId
+        activeConversationId || null
       );
 
-      const replyMsg = { role: 'assistant', content: res.data.reply };
+      const replyContent = res.data?.reply || res.data?.content || 'I processed your question.';
+      const replyMsg = { role: 'assistant', content: replyContent };
       setMessages([...updatedMessages, replyMsg]);
 
       // Auto-update title if it's the first message
-      if (messages.length <= 1 && text.length > 3) {
+      if (messages.length <= 1 && text.length > 3 && activeConversationId) {
         const titleSnippet = text.slice(0, 30);
         handleRename(activeConversationId, titleSnippet);
       }

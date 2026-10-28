@@ -34,7 +34,7 @@ export const practiceGenerateSchema = z.object({
 });
 
 export const hintRequestSchema = z.object({
-  problemId: z.string().uuid().optional(),
+  problemId: z.string().optional().nullable(),
   level: z.number().int().min(1).max(4, 'Progressive hints only support levels 1 through 4. For full solution use /api/ai/solution.'),
   problemContext: z.object({
     title: z.string().min(1),
@@ -45,7 +45,7 @@ export const hintRequestSchema = z.object({
 });
 
 export const solutionRequestSchema = z.object({
-  problemId: z.string().uuid().optional(),
+  problemId: z.string().optional().nullable(),
   problemContext: z.object({
     title: z.string().min(1),
     description: z.string().min(1),
@@ -56,9 +56,9 @@ export const solutionRequestSchema = z.object({
 export const chatRequestSchema = z.object({
   message: z.string().trim().min(1, 'Message cannot be empty.').max(4000, 'Message is too long.'),
   language: z.enum(SUPPORTED_LANGUAGES).optional().default('python'),
-  conversationId: z.string().uuid().optional(),
+  conversationId: z.string().optional().nullable(),
   history: z.array(z.object({
     role: z.enum(['user', 'assistant', 'system']),
     content: z.string()
-  })).max(20, 'History cannot exceed 20 turns.').optional().default([])
+  })).optional().default([])
 });

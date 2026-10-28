@@ -2,8 +2,22 @@ import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/su
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 
 // In-memory fallback for local offline mode
-const devConversations = new Map();
-const devMessages = new Map();
+export const devConversations = new Map();
+export const devMessages = new Map();
+
+export function saveDevChatMessage(conversationId, role, content) {
+  if (!devMessages.has(conversationId)) {
+    devMessages.set(conversationId, []);
+  }
+  const msgs = devMessages.get(conversationId);
+  msgs.push({
+    id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    conversation_id: conversationId,
+    role,
+    content,
+    created_at: new Date().toISOString()
+  });
+}
 
 export async function getConversations(req, res, next) {
   try {
